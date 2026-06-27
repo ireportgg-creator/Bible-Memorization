@@ -80,15 +80,17 @@ extension BibleBook {
 }
 
 enum Translation: String, CaseIterable, Identifiable {
-    case korean = "개역한글"
-    case niv = "NIV"
+    case korean  = "개역한글"
+    case niv     = "NIV"
+    case message = "Message"
 
     var id: String { rawValue }
 
     var bibleId: String {
         switch self {
-        case .korean: return ""
-        case .niv:    return APIConfig.nivBibleId
+        case .korean:  return ""
+        case .niv:     return APIConfig.nivBibleId
+        case .message: return APIConfig.messageBibleId
         }
     }
 }
