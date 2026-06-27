@@ -8,20 +8,24 @@ struct SearchView: View {
         animation: .default
     ) private var categories: FetchedResults<Category>
 
-    @State private var selectedTranslation = Translation.korean
     @State private var selectedBook = BibleBook.all[0]
+    @State private var showBookPicker = false
     @State private var chapterText = ""
     @State private var verseText = ""
-    @State private var fetchedVerse: VerseData?
+    @State private var fetchedVerses: [(verse: VerseData, translation: Translation)] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var showSaveSheet = false
+    @State private var showDuplicateAlert = false
+    @State private var didSave = false
+
+    private enum Field { case chapter, verse }
+    @FocusState private var focusedField: Field?
 
     var body: some View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 24) {
-                    translationPicker
                     bookSelector
                     referenceInputs
                     searchButton
@@ -34,20 +38,47 @@ struct SearchView: View {
                             .font(.callout)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal)
-                    } else if let verse = fetchedVerse {
-                        verseCard(verse)
+                    } else if !fetchedVerses.isEmpty {
+                        ForEach(fetchedVerses.indices, id: \.self) { i in
+                            verseCard(fetchedVerses[i].verse, translation: fetchedVerses[i].translation)
+                        }
                         saveButton
                     }
                 }
                 .padding(.vertical, 20)
             }
+            .scrollDismissesKeyboard(.immediately)
+            .onChange(of: focusedField) { newField in
+                if newField == .chapter { chapterText = "" }
+                else if newField == .verse { verseText = "" }
+            }
             .navigationTitle("성경 검색")
-            .sheet(isPresented: $showSaveSheet) {
+            .toolbar {
+                if !fetchedVerses.isEmpty || !chapterText.isEmpty || !verseText.isEmpty {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button("초기화") {
+                            fetchedVerses = []
+                            chapterText = ""
+                            verseText = ""
+                            errorMessage = nil
+                            focusedField = nil
+                        }
+                    }
+                }
+            }
+            .sheet(isPresented: $showSaveSheet, onDismiss: {
+                if didSave {
+                    fetchedVerses = []
+                    chapterText = ""
+                    verseText = ""
+                    focusedField = nil
+                    didSave = false
+                }
+            }) {
                 SaveVerseSheet(
-                    verse: fetchedVerse!,
-                    translation: selectedTranslation.rawValue,
+                    verses: fetchedVerses,
                     categories: Array(categories),
-                    onSave: saveVerse(verse:to:)
+                    onSave: saveVerses(to:)
                 )
             }
         }
@@ -55,35 +86,24 @@ struct SearchView: View {
 
     // MARK: - Sub-views
 
-    private var translationPicker: some View {
-        Picker("번역", selection: $selectedTranslation) {
-            ForEach(Translation.allCases) { t in
-                Text(t.rawValue).tag(t)
-            }
-        }
-        .pickerStyle(.segmented)
-        .padding(.horizontal)
-    }
-
     private var bookSelector: some View {
-        Menu {
-            ForEach(BibleBook.all) { book in
-                Button(selectedTranslation == .korean ? book.korean : book.english) {
-                    selectedBook = book
-                }
-            }
-        } label: {
+        Button { showBookPicker = true } label: {
             HStack {
-                Text(selectedTranslation == .korean ? selectedBook.korean : selectedBook.english)
+                Text(selectedBook.korean)
                     .font(.headline)
+                    .foregroundColor(.primary)
                 Spacer()
                 Image(systemName: "chevron.down")
                     .font(.caption)
+                    .foregroundColor(.secondary)
             }
             .padding()
             .background(Color(.systemGray6))
             .cornerRadius(10)
-            .padding(.horizontal)
+        }
+        .padding(.horizontal)
+        .sheet(isPresented: $showBookPicker) {
+            BookPickerSheet(selectedBook: $selectedBook)
         }
     }
 
@@ -93,8 +113,8 @@ struct SearchView: View {
                 TextField("장", text: $chapterText)
                     .keyboardType(.numberPad)
                     .multilineTextAlignment(.center)
-                Text("장")
-                    .foregroundColor(.secondary)
+                    .focused($focusedField, equals: .chapter)
+                Text("장").foregroundColor(.secondary)
             }
             .padding()
             .background(Color(.systemGray6))
@@ -104,8 +124,8 @@ struct SearchView: View {
                 TextField("절", text: $verseText)
                     .keyboardType(.numberPad)
                     .multilineTextAlignment(.center)
-                Text("절")
-                    .foregroundColor(.secondary)
+                    .focused($focusedField, equals: .verse)
+                Text("절").foregroundColor(.secondary)
             }
             .padding()
             .background(Color(.systemGray6))
@@ -116,6 +136,7 @@ struct SearchView: View {
 
     private var searchButton: some View {
         Button {
+            focusedField = nil
             Task { await search() }
         } label: {
             Text("검색")
@@ -128,13 +149,13 @@ struct SearchView: View {
         .padding(.horizontal)
     }
 
-    private func verseCard(_ verse: VerseData) -> some View {
+    private func verseCard(_ verse: VerseData, translation: Translation) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text(verse.reference)
                     .font(.headline)
                 Spacer()
-                Text(selectedTranslation.rawValue)
+                Text(translation.rawValue)
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .padding(.horizontal, 8)
@@ -155,7 +176,11 @@ struct SearchView: View {
 
     private var saveButton: some View {
         Button {
-            showSaveSheet = true
+            if isAlreadySaved() {
+                showDuplicateAlert = true
+            } else {
+                showSaveSheet = true
+            }
         } label: {
             Label("저장하기", systemImage: "bookmark")
                 .font(.headline)
@@ -164,6 +189,18 @@ struct SearchView: View {
         }
         .buttonStyle(.bordered)
         .padding(.horizontal)
+        .alert("저장된 말씀입니다.", isPresented: $showDuplicateAlert) {
+            Button("확인", role: .cancel) {}
+        }
+    }
+
+    private func isAlreadySaved() -> Bool {
+        guard let first = fetchedVerses.first else { return false }
+        let request = SavedVerse.fetchRequest()
+        request.predicate = NSPredicate(format: "reference == %@ AND translation == %@",
+                                        first.verse.reference, first.translation.rawValue)
+        request.fetchLimit = 1
+        return (try? viewContext.count(for: request)) ?? 0 > 0
     }
 
     // MARK: - Logic
@@ -177,39 +214,74 @@ struct SearchView: View {
 
         isLoading = true
         errorMessage = nil
-        fetchedVerse = nil
+        fetchedVerses = []
 
-        do {
-            if selectedTranslation == .korean {
-                fetchedVerse = try await KoreanBibleService.shared.fetchVerse(
-                    bookId: selectedBook.id,
-                    chapter: chapter,
-                    verse: verse
-                )
-            } else {
-                fetchedVerse = try await BibleAPIService.shared.fetchVerse(
-                    bibleId: selectedTranslation.bibleId,
-                    bookId: selectedBook.id,
-                    chapter: chapter,
-                    verse: verse
-                )
-            }
-        } catch {
-            errorMessage = error.localizedDescription
+        let bookId = selectedBook.id
+
+        async let koreanFetch  = KoreanBibleService.shared.fetchVerse(bookId: bookId, chapter: chapter, verse: verse)
+        async let nivFetch     = BibleAPIService.shared.fetchVerse(bibleId: Translation.niv.bibleId, bookId: bookId, chapter: chapter, verse: verse)
+        async let messageFetch = BibleAPIService.shared.fetchVerse(bibleId: Translation.message.bibleId, bookId: bookId, chapter: chapter, verse: verse)
+
+        var results: [(verse: VerseData, translation: Translation)] = []
+        if let v = try? await koreanFetch  { results.append((v, .korean)) }
+        if let v = try? await nivFetch     { results.append((v, .niv)) }
+        if let v = try? await messageFetch { results.append((v, .message)) }
+
+        fetchedVerses = results
+        if results.isEmpty {
+            errorMessage = "구절을 불러오지 못했습니다. 장/절 번호를 확인해 주세요."
         }
 
         isLoading = false
     }
 
-    private func saveVerse(verse: VerseData, to category: Category) {
-        let saved = SavedVerse(context: viewContext)
-        saved.id = UUID()
-        saved.reference = verse.reference
-        saved.text = verse.cleanedContent
-        saved.translation = selectedTranslation.rawValue
-        saved.savedAt = Date()
-        saved.category = category
+    private func saveVerses(to category: Category) {
+        let now = Date()
+        for (index, (verse, translation)) in fetchedVerses.enumerated() {
+            let saved = SavedVerse(context: viewContext)
+            saved.id = UUID()
+            saved.reference = verse.reference
+            saved.text = verse.cleanedContent
+            saved.translation = translation.rawValue
+            saved.savedAt = now.addingTimeInterval(Double(-index) * 0.001)
+            saved.category = category
+        }
         try? viewContext.save()
+        didSave = true
         showSaveSheet = false
+    }
+}
+
+private struct BookPickerSheet: View {
+    @Binding var selectedBook: BibleBook
+    @Environment(\.dismiss) private var dismiss
+    @State private var query = ""
+
+    var filtered: [BibleBook] {
+        query.isEmpty ? BibleBook.all : BibleBook.all.filter { $0.korean.hasPrefix(query) }
+    }
+
+    var body: some View {
+        NavigationView {
+            List(filtered) { book in
+                Button {
+                    selectedBook = book
+                    dismiss()
+                } label: {
+                    Text(book.korean)
+                        .foregroundColor(.primary)
+                }
+            }
+            .searchable(text: $query,
+                        placement: .navigationBarDrawer(displayMode: .always),
+                        prompt: "성경 검색")
+            .navigationTitle("책 선택")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("취소") { dismiss() }
+                }
+            }
+        }
     }
 }

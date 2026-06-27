@@ -31,17 +31,7 @@ struct SavedVersesView: View {
                     List {
                         ForEach(categories) { category in
                             NavigationLink(destination: CategoryDetailView(category: category)) {
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(category.name ?? "")
-                                            .font(.headline)
-                                        Text("\(category.verses?.count ?? 0)개")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                    }
-                                    Spacer()
-                                }
-                                .padding(.vertical, 4)
+                                CategoryRowView(category: category)
                             }
                         }
                         .onDelete(perform: deleteCategories)
@@ -51,9 +41,7 @@ struct SavedVersesView: View {
             .navigationTitle("저장된 말씀")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        showAddCategory = true
-                    } label: {
+                    Button { showAddCategory = true } label: {
                         Image(systemName: "plus")
                     }
                 }
@@ -79,5 +67,34 @@ struct SavedVersesView: View {
     private func deleteCategories(at offsets: IndexSet) {
         offsets.map { categories[$0] }.forEach(viewContext.delete)
         try? viewContext.save()
+    }
+}
+
+// 각 행이 자체 @FetchRequest를 갖도록 분리 → verse 삭제 시 카운트 즉시 반영
+private struct CategoryRowView: View {
+    let category: Category
+    @FetchRequest private var verses: FetchedResults<SavedVerse>
+
+    init(category: Category) {
+        self.category = category
+        _verses = FetchRequest<SavedVerse>(
+            sortDescriptors: [],
+            predicate: NSPredicate(format: "category == %@", category),
+            animation: .none
+        )
+    }
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(category.name ?? "")
+                    .font(.headline)
+                Text("\(verses.count)개")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            Spacer()
+        }
+        .padding(.vertical, 4)
     }
 }

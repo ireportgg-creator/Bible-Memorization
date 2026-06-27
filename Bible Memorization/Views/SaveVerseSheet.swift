@@ -5,31 +5,50 @@ struct SaveVerseSheet: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dismiss) private var dismiss
 
-    let verse: VerseData
-    let translation: String
+    let verses: [(verse: VerseData, translation: Translation)]
     let categories: [Category]
-    let onSave: (VerseData, Category) -> Void
+    let onSave: (Category) -> Void
 
     @State private var selectedCategory: Category?
     @State private var showAddCategory = false
     @State private var newCategoryName = ""
+    @State private var saved = false
 
     var body: some View {
         NavigationView {
             VStack(alignment: .leading, spacing: 0) {
-                // 구절 미리보기
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(verse.reference)
-                        .font(.headline)
-                    Text(verse.cleanedContent)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .lineLimit(3)
+                // 병행 구절 미리보기
+                ScrollView {
+                    VStack(spacing: 8) {
+                        ForEach(verses.indices, id: \.self) { i in
+                            let item = verses[i]
+                            VStack(alignment: .leading, spacing: 6) {
+                                HStack {
+                                    Text(item.verse.reference)
+                                        .font(.subheadline)
+                                        .fontWeight(.semibold)
+                                    Spacer()
+                                    Text(item.translation.rawValue)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(Color(.systemGray5))
+                                        .cornerRadius(4)
+                                }
+                                Text(item.verse.cleanedContent)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                    .lineLimit(3)
+                            }
+                            .padding(10)
+                            .background(Color(.systemGray6))
+                            .cornerRadius(10)
+                        }
+                    }
+                    .padding()
                 }
-                .padding()
-                .background(Color(.systemGray6))
-                .cornerRadius(12)
-                .padding()
+                .frame(maxHeight: 220)
 
                 Text("카테고리 선택")
                     .font(.subheadline)
@@ -37,7 +56,7 @@ struct SaveVerseSheet: View {
                     .padding(.horizontal)
                     .padding(.bottom, 4)
 
-                List(selection: $selectedCategory) {
+                List {
                     ForEach(categories) { category in
                         HStack {
                             Text(category.name ?? "")
@@ -60,9 +79,9 @@ struct SaveVerseSheet: View {
                 .listStyle(.insetGrouped)
 
                 Button {
-                    if let category = selectedCategory {
-                        onSave(verse, category)
-                    }
+                    guard !saved, let category = selectedCategory else { return }
+                    saved = true
+                    onSave(category)
                 } label: {
                     Text("저장")
                         .font(.headline)
@@ -70,7 +89,7 @@ struct SaveVerseSheet: View {
                         .padding()
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(selectedCategory == nil)
+                .disabled(selectedCategory == nil || saved)
                 .padding()
             }
             .navigationTitle("저장하기")
