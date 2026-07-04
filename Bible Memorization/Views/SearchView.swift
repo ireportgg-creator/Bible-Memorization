@@ -12,6 +12,8 @@ struct SearchView: View {
     @State private var showBookPicker = false
     @State private var chapterText = ""
     @State private var verseText = ""
+    @State private var endChapterText = ""
+    @State private var endVerseText = ""
     @State private var fetchedVerses: [(verse: VerseData, translation: Translation)] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
@@ -19,7 +21,7 @@ struct SearchView: View {
     @State private var showDuplicateAlert = false
     @State private var didSave = false
 
-    private enum Field { case chapter, verse }
+    private enum Field { case chapter, verse, endChapter, endVerse }
     @FocusState private var focusedField: Field?
 
     var body: some View {
@@ -49,8 +51,13 @@ struct SearchView: View {
             }
             .scrollDismissesKeyboard(.immediately)
             .onChange(of: focusedField) { newField in
-                if newField == .chapter { chapterText = "" }
-                else if newField == .verse { verseText = "" }
+                switch newField {
+                case .chapter:    chapterText = ""
+                case .verse:      verseText = ""
+                case .endChapter: endChapterText = ""
+                case .endVerse:   endVerseText = ""
+                case .none:       break
+                }
             }
             .navigationTitle("성경 검색")
             .toolbar {
@@ -60,6 +67,8 @@ struct SearchView: View {
                             fetchedVerses = []
                             chapterText = ""
                             verseText = ""
+                            endChapterText = ""
+                            endVerseText = ""
                             errorMessage = nil
                             focusedField = nil
                         }
@@ -71,6 +80,8 @@ struct SearchView: View {
                     fetchedVerses = []
                     chapterText = ""
                     verseText = ""
+                    endChapterText = ""
+                    endVerseText = ""
                     focusedField = nil
                     didSave = false
                 }
@@ -108,28 +119,58 @@ struct SearchView: View {
     }
 
     private var referenceInputs: some View {
-        HStack(spacing: 16) {
-            HStack {
-                TextField("장", text: $chapterText)
-                    .keyboardType(.numberPad)
-                    .multilineTextAlignment(.center)
-                    .focused($focusedField, equals: .chapter)
-                Text("장").foregroundColor(.secondary)
-            }
-            .padding()
-            .background(Color(.systemGray6))
-            .cornerRadius(10)
+        VStack(spacing: 12) {
+            HStack(spacing: 16) {
+                HStack {
+                    TextField("장", text: $chapterText)
+                        .keyboardType(.numberPad)
+                        .multilineTextAlignment(.center)
+                        .focused($focusedField, equals: .chapter)
+                    Text("장").foregroundColor(.secondary)
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
 
-            HStack {
-                TextField("절", text: $verseText)
-                    .keyboardType(.numberPad)
-                    .multilineTextAlignment(.center)
-                    .focused($focusedField, equals: .verse)
-                Text("절").foregroundColor(.secondary)
+                HStack {
+                    TextField("절", text: $verseText)
+                        .keyboardType(.numberPad)
+                        .multilineTextAlignment(.center)
+                        .focused($focusedField, equals: .verse)
+                    Text("절").foregroundColor(.secondary)
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
             }
-            .padding()
-            .background(Color(.systemGray6))
-            .cornerRadius(10)
+
+            HStack(spacing: 8) {
+                Text("~")
+                    .foregroundColor(.secondary)
+                    .frame(width: 16)
+
+                HStack {
+                    TextField("장", text: $endChapterText)
+                        .keyboardType(.numberPad)
+                        .multilineTextAlignment(.center)
+                        .focused($focusedField, equals: .endChapter)
+                    Text("장").foregroundColor(.secondary)
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
+
+                HStack {
+                    TextField("절", text: $endVerseText)
+                        .keyboardType(.numberPad)
+                        .multilineTextAlignment(.center)
+                        .focused($focusedField, equals: .endVerse)
+                    Text("절").foregroundColor(.secondary)
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
+            }
         }
         .padding(.horizontal)
     }
@@ -212,20 +253,45 @@ struct SearchView: View {
             return
         }
 
+        let isRange = !endVerseText.isEmpty
+        let endChapter = endChapterText.isEmpty ? chapter : (Int(endChapterText) ?? 0)
+        let endVerse   = Int(endVerseText) ?? 0
+
+        if isRange {
+            guard endChapter > 0, endVerse > 0 else {
+                errorMessage = "끝 절을 올바르게 입력해 주세요."
+                return
+            }
+            guard endChapter > chapter || (endChapter == chapter && endVerse > verse) else {
+                errorMessage = "끝 절이 시작 절보다 뒤여야 합니다."
+                return
+            }
+        }
+
         isLoading = true
         errorMessage = nil
         fetchedVerses = []
 
         let bookId = selectedBook.id
-
-        async let koreanFetch  = KoreanBibleService.shared.fetchVerse(bookId: bookId, chapter: chapter, verse: verse)
-        async let nivFetch     = BibleAPIService.shared.fetchVerse(bibleId: Translation.niv.bibleId, bookId: bookId, chapter: chapter, verse: verse)
-        async let messageFetch = BibleAPIService.shared.fetchVerse(bibleId: Translation.message.bibleId, bookId: bookId, chapter: chapter, verse: verse)
-
         var results: [(verse: VerseData, translation: Translation)] = []
-        if let v = try? await koreanFetch  { results.append((v, .korean)) }
-        if let v = try? await nivFetch     { results.append((v, .niv)) }
-        if let v = try? await messageFetch { results.append((v, .message)) }
+
+        if isRange {
+            async let koreanFetch  = KoreanBibleService.shared.fetchVerseRange(bookId: bookId, startChapter: chapter, startVerse: verse, endChapter: endChapter, endVerse: endVerse)
+            async let nivFetch     = BibleAPIService.shared.fetchPassage(bibleId: Translation.niv.bibleId, bookId: bookId, startChapter: chapter, startVerse: verse, endChapter: endChapter, endVerse: endVerse)
+            async let messageFetch = BibleAPIService.shared.fetchPassage(bibleId: Translation.message.bibleId, bookId: bookId, startChapter: chapter, startVerse: verse, endChapter: endChapter, endVerse: endVerse)
+
+            if let v = try? await koreanFetch  { results.append((v, .korean)) }
+            if let v = try? await nivFetch     { results.append((v, .niv)) }
+            if let v = try? await messageFetch { results.append((v, .message)) }
+        } else {
+            async let koreanFetch  = KoreanBibleService.shared.fetchVerse(bookId: bookId, chapter: chapter, verse: verse)
+            async let nivFetch     = BibleAPIService.shared.fetchVerse(bibleId: Translation.niv.bibleId, bookId: bookId, chapter: chapter, verse: verse)
+            async let messageFetch = BibleAPIService.shared.fetchVerse(bibleId: Translation.message.bibleId, bookId: bookId, chapter: chapter, verse: verse)
+
+            if let v = try? await koreanFetch  { results.append((v, .korean)) }
+            if let v = try? await nivFetch     { results.append((v, .niv)) }
+            if let v = try? await messageFetch { results.append((v, .message)) }
+        }
 
         fetchedVerses = results
         if results.isEmpty {
