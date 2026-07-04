@@ -3,11 +3,15 @@ import SwiftUI
 struct ContentView: View {
     var body: some View {
         TabView {
-            SearchView()
-                .tabItem { Label("검색", systemImage: "magnifyingglass") }
+            HomeView()
+                .tabItem { Label("Home", systemImage: "house.fill") }
 
-            SavedVersesView()
-                .tabItem { Label("저장된 말씀", systemImage: "bookmark.fill") }
+            StudyModePickerView()
+                .tabItem { Label("Practice", systemImage: "brain.head.profile") }
+
+            LibraryView()
+                .tabItem { Label("Library", systemImage: "books.vertical.fill") }
         }
+        .tint(.terracotta)
     }
 }

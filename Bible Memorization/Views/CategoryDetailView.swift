@@ -17,39 +17,28 @@ struct CategoryDetailView: View {
     }
 
     var body: some View {
-        Group {
-            if verses.isEmpty {
-                VStack(spacing: 12) {
-                    Image(systemName: "text.book.closed")
-                        .font(.system(size: 40))
-                        .foregroundColor(.secondary)
-                    Text("저장된 말씀이 없습니다")
-                        .foregroundColor(.secondary)
-                }
-            } else {
-                List {
-                    ForEach(verses) { verse in
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                Text(verse.reference ?? "")
-                                    .font(.headline)
-                                Spacer()
-                                Text(verse.translation ?? "")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 3)
-                                    .background(Color(.systemGray5))
-                                    .cornerRadius(5)
-                            }
-                            Text(verse.text ?? "")
-                                .font(.body)
-                                .lineSpacing(4)
-                                .foregroundColor(.primary)
-                        }
-                        .padding(.vertical, 6)
+        ZStack {
+            Color.parchment.ignoresSafeArea()
+
+            Group {
+                if verses.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: "text.book.closed")
+                            .font(.system(size: 40)).foregroundColor(.mutedBrown)
+                        Text("저장된 말씀이 없습니다")
+                            .foregroundColor(.mutedBrown)
                     }
-                    .onDelete(perform: deleteVerses)
+                } else {
+                    ScrollView {
+                        VStack(spacing: 12) {
+                            ForEach(verses) { verse in
+                                VerseRow(verse: verse)
+                            }
+                            .onDelete(perform: deleteVerses)
+                        }
+                        .padding(.horizontal)
+                        .padding(.vertical, 16)
+                    }
                 }
             }
         }
@@ -60,5 +49,35 @@ struct CategoryDetailView: View {
     private func deleteVerses(at offsets: IndexSet) {
         offsets.map { verses[$0] }.forEach(viewContext.delete)
         try? viewContext.save()
+    }
+}
+
+private struct VerseRow: View {
+    let verse: SavedVerse
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text(verse.reference ?? "")
+                        .font(.subheadline).fontWeight(.semibold)
+                    Spacer()
+                    HStack(spacing: 6) {
+                        if verse.isMemorized {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.caption).foregroundColor(.terracotta)
+                        }
+                        Text(verse.translation ?? "")
+                            .font(.caption).foregroundColor(.mutedBrown)
+                            .padding(.horizontal, 6).padding(.vertical, 2)
+                            .background(Color.parchment).cornerRadius(4)
+                    }
+                }
+                Text(verse.text ?? "")
+                    .font(.body).lineSpacing(4).foregroundColor(.primary)
+            }
+        }
+        .padding(16)
+        .cardStyle()
     }
 }

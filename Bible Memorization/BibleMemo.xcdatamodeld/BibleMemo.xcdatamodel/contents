@@ -12,6 +12,7 @@
         <attribute name="savedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="text" optional="YES" attributeType="String"/>
         <attribute name="translation" optional="YES" attributeType="String"/>
+        <attribute name="isMemorized" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <relationship name="category" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Category" inverseName="verses" inverseEntity="Category"/>
     </entity>
 </model>
