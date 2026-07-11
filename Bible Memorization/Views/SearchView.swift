@@ -317,37 +317,3 @@ struct SearchView: View {
         showSaveSheet = false
     }
 }
-
-private struct BookPickerSheet: View {
-    @Binding var selectedBook: BibleBook
-    @Environment(\.dismiss) private var dismiss
-    @State private var query = ""
-
-    var filtered: [BibleBook] {
-        query.isEmpty ? BibleBook.all : BibleBook.all.filter { $0.korean.hasPrefix(query) }
-    }
-
-    var body: some View {
-        NavigationView {
-            List(filtered) { book in
-                Button {
-                    selectedBook = book
-                    dismiss()
-                } label: {
-                    Text(book.korean)
-                        .foregroundColor(.primary)
-                }
-            }
-            .searchable(text: $query,
-                        placement: .navigationBarDrawer(displayMode: .always),
-                        prompt: "성경 검색")
-            .navigationTitle("책 선택")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("취소") { dismiss() }
-                }
-            }
-        }
-    }
-}

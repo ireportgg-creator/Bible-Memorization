@@ -47,6 +47,53 @@ actor KoreanBibleService {
         )
     }
 
+    func fetchChapter(bookId: String, chapter: Int) throws -> ChapterContent {
+        try loadBible()
+        guard let chapters = bible?[bookId], chapter >= 1, chapter <= chapters.count else {
+            throw APIError.chapterNotFound
+        }
+        let bookName = BibleBook.all.first(where: { $0.id == bookId })?.korean ?? bookId
+        let verses = chapters[chapter - 1].enumerated().map { index, text in
+            VerseLine(id: index + 1, number: index + 1, numberLabel: "\(index + 1)", text: text)
+        }
+        return ChapterContent(bookId: bookId, chapterNumber: chapter, reference: "\(bookName) \(chapter)장", verses: verses)
+    }
+
+    func chapterCount(bookId: String) throws -> Int {
+        try loadBible()
+        guard let chapters = bible?[bookId] else { throw APIError.chapterNotFound }
+        return chapters.count
+    }
+
+    func search(query: String) throws -> [SearchResultItem] {
+        try loadBible()
+        guard let bible else { throw APIError.notConfigured }
+
+        var results: [SearchResultItem] = []
+        for (bookId, chapters) in bible {
+            let bookName = BibleBook.all.first(where: { $0.id == bookId })?.korean ?? bookId
+            for (chapterIndex, verses) in chapters.enumerated() {
+                for (verseIndex, text) in verses.enumerated() where text.localizedCaseInsensitiveContains(query) {
+                    let chapter = chapterIndex + 1
+                    let verse = verseIndex + 1
+                    results.append(SearchResultItem(
+                        id: "\(bookId).\(chapter).\(verse)",
+                        bookId: bookId,
+                        chapter: chapter,
+                        verse: verse,
+                        reference: "\(bookName) \(chapter):\(verse)",
+                        text: text
+                    ))
+                }
+            }
+        }
+
+        let order = Dictionary(uniqueKeysWithValues: BibleBook.all.enumerated().map { ($1.id, $0) })
+        return results.sorted {
+            (order[$0.bookId] ?? 0, $0.chapter, $0.verse) < (order[$1.bookId] ?? 0, $1.chapter, $1.verse)
+        }
+    }
+
     private func loadBible() throws {
         guard bible == nil else { return }
         guard let url = Bundle.main.url(forResource: "korean_bible", withExtension: "json") else {

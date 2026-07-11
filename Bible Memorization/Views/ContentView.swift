@@ -11,6 +11,9 @@ struct ContentView: View {
 
             LibraryView()
                 .tabItem { Label("Library", systemImage: "books.vertical.fill") }
+
+            BibleReadingView()
+                .tabItem { Label("Read", systemImage: "book.fill") }
         }
         .tint(.terracotta)
     }

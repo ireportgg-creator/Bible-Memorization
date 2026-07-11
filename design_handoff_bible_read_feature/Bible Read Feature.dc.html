@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; background: #EAE2D8; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    ::-webkit-scrollbar { display: none; }
+  </style>
+</helmet>
+
+<div style="display:flex; align-items:flex-start; justify-content:center; gap:40px; padding:60px 24px; min-height:100vh; font-family:'Lora',Georgia,serif;">
+
+  <div style="display:flex; flex-direction:column; align-items:center; gap:14px;">
+    <div style="font-size:13px; font-weight:600; letter-spacing:0.06em; color:#8C7A6B; text-transform:uppercase;">Read 탭 · 북마크 · 검색</div>
+    <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" width="{{ 402 }}" height="{{ 874 }}" hint-size="402,874">
+      <div style="height:100%; display:flex; flex-direction:column; background:#F7F2ED; padding-top:56px; box-sizing:border-box; position:relative; overflow:hidden;" data-screen-label="{{ deviceLabel }}">
+
+        <!-- ============ MAIN CONTENT AREA ============ -->
+        <div style="flex:1; min-height:0; display:flex; flex-direction:column; position:relative;">
+
+          <!-- READ TAB -->
+          <sc-if value="{{ isReadTab }}" hint-placeholder-val="{{ true }}">
+            <sc-if value="{{ isReadMain }}" hint-placeholder-val="{{ true }}">
+              <div style="height:100%; display:flex; flex-direction:column;">
+                <!-- header -->
+                <div style="flex-shrink:0; padding:6px 20px 12px; display:flex; flex-direction:column; gap:12px; background:#F7F2ED; border-bottom:0.5px solid rgba(140,122,107,0.18);">
+                  <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                    <div onClick="{{ openBookSheet }}" style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                      <span style="font-size:22px; font-weight:700; color:#1C1917;">{{ currentRef }}</span>
+                      <svg width="11" height="11" viewBox="0 0 11 11" style="margin-top:3px;"><path d="M1 3l4.5 4.5L10 3" stroke="#B4682D" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                      <div onClick="{{ goBookmarksScreen }}" style="width:36px; height:36px; border-radius:18px; display:flex; align-items:center; justify-content:center; background:rgba(140,122,107,0.1);">
+                        <svg width="16" height="18" viewBox="0 0 16 18"><path d="M1 1h14v16l-7-4.5L1 17V1z" fill="none" stroke="#1C1917" stroke-width="1.6" stroke-linejoin="round"/></svg>
+                      </div>
+                      <div onClick="{{ goSearchScreen }}" style="width:36px; height:36px; border-radius:18px; display:flex; align-items:center; justify-content:center; background:rgba(140,122,107,0.1);">
+                        <svg width="17" height="17" viewBox="0 0 17 17"><circle cx="7" cy="7" r="6" fill="none" stroke="#1C1917" stroke-width="1.6"/><path d="M11.5 11.5L16 16" stroke="#1C1917" stroke-width="1.6" stroke-linecap="round"/></svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- translation segmented control -->
+                  <div style="display:flex; background:rgba(140,122,107,0.12); border-radius:10px; padding:3px; gap:2px;">
+                    <sc-for list="{{ translationSegs }}" as="seg" hint-placeholder-count="3">
+                      <div onClick="{{ seg.select }}" style="flex:1; text-align:center; padding:7px 4px; border-radius:8px; font-size:14px; letter-spacing:-0.1px; cursor:pointer; background:{{ seg.bg }}; color:{{ seg.color }}; font-weight:{{ seg.weight }}; box-shadow:{{ seg.shadow }};">{{ seg.label }}</div>
+                    </sc-for>
+                  </div>
+
+                  <!-- add chapter bookmark -->
+                  <div onClick="{{ addChapterBookmark }}" style="display:flex; align-items:center; gap:6px; cursor:pointer; padding:2px 2px;">
+                    <svg width="14" height="14" viewBox="0 0 16 18"><path d="M1 1h14v16l-7-4.5L1 17V1z" fill="none" stroke="#B4682D" stroke-width="1.6" stroke-linejoin="round"/></svg>
+                    <span style="font-size:13px; color:#B4682D; font-weight:600;">이 장 책갈피에 추가</span>
+                  </div>
+                </div>
+
+                <!-- verse list -->
+                <div style="flex:1; overflow-y:auto; padding:8px 20px 16px;">
+                  <sc-for list="{{ verseRows }}" as="v" hint-placeholder-count="8">
+                    <div style="border-radius:10px; background:{{ v.bg }}; transition:background 0.4s;">
+                      <div onMouseDown="{{ v.onMouseDown }}" onMouseUp="{{ v.onMouseUp }}" onMouseLeave="{{ v.onMouseUp }}" onClick="{{ v.toggle }}" style="display:flex; gap:10px; padding:9px 8px; cursor:pointer;">
+                        <span style="flex-shrink:0; width:22px; font-size:12px; font-weight:700; color:#B4682D; padding-top:4px;">{{ v.n }}</span>
+                        <span style="flex:1; font-size:18px; line-height:1.65; color:#1C1917; font-weight:400;">{{ v.text }}</span>
+                      </div>
+                      <sc-if value="{{ v.showAction }}">
+                        <div style="display:flex; gap:10px; padding:0 8px 12px 40px;">
+                          <div onClick="{{ v.addBookmark }}" style="display:flex; align-items:center; gap:5px; background:rgba(180,104,45,0.1); padding:6px 12px; border-radius:8px; cursor:pointer;">
+                            <svg width="12" height="14" viewBox="0 0 16 18"><path d="M1 1h14v16l-7-4.5L1 17V1z" fill="none" stroke="#B4682D" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                            <span style="font-size:13px; font-weight:600; color:#B4682D;">책갈피 추가</span>
+                          </div>
+                          <div onClick="{{ v.toggle }}" style="display:flex; align-items:center; padding:6px 12px; cursor:pointer;">
+                            <span style="font-size:13px; font-weight:500; color:#8C7A6B;">취소</span>
+                          </div>
+                        </div>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+
+                <!-- prev/next chapter bar -->
+                <div style="flex-shrink:0; display:flex; align-items:center; justify-content:space-between; padding:10px 20px; border-top:0.5px solid rgba(140,122,107,0.18); background:#F7F2ED;">
+                  <div onClick="{{ prevChapter }}" style="display:flex; align-items:center; gap:4px; cursor:pointer; opacity:{{ prevOpacity }};">
+                    <svg width="8" height="14" viewBox="0 0 8 14"><path d="M7 1L1 7l6 6" stroke="#B4682D" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span style="font-size:15px; font-weight:600; color:#B4682D;">이전 장</span>
+                  </div>
+                  <span style="font-size:13px; color:#8C7A6B;">{{ currentBookName }} {{ currentChapter }} / {{ currentBookTotalChapters }}</span>
+                  <div onClick="{{ nextChapter }}" style="display:flex; align-items:center; gap:4px; cursor:pointer; opacity:{{ nextOpacity }};">
+                    <span style="font-size:15px; font-weight:600; color:#B4682D;">다음 장</span>
+                    <svg width="8" height="14" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" stroke="#B4682D" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- BOOKMARKS SCREEN -->
+            <sc-if value="{{ isReadBookmarks }}">
+              <div style="height:100%; display:flex; flex-direction:column;">
+                <div style="flex-shrink:0; display:flex; align-items:center; gap:10px; padding:6px 16px 14px; border-bottom:0.5px solid rgba(140,122,107,0.18);">
+                  <div onClick="{{ backToRead }}" style="width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                    <svg width="10" height="17" viewBox="0 0 10 17"><path d="M8.5 1L1 8.5l7.5 7.5" stroke="#B4682D" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                  <span style="font-size:22px; font-weight:700; color:#1C1917;">북마크</span>
+                </div>
+                <div style="flex:1; overflow-y:auto; padding:8px 16px 20px;">
+                  <sc-if value="{{ hasBookmarks }}" hint-placeholder-val="{{ true }}">
+                    <sc-for list="{{ bookmarkRows }}" as="bm" hint-placeholder-count="4">
+                      <div style="position:relative; overflow:hidden; border-radius:14px; margin-bottom:10px;">
+                        <div style="position:absolute; top:0; right:0; bottom:0; width:72px; background:#B4432D; display:flex; align-items:center; justify-content:center; cursor:pointer;" onClick="{{ bm.remove }}">
+                          <span style="color:#fff; font-size:14px; font-weight:600;">삭제</span>
+                        </div>
+                        <div onClick="{{ bm.toggleSwipe }}" style="position:relative; background:#FFFFFF; border-radius:14px; box-shadow:0 2px 8px rgba(0,0,0,0.07); padding:14px 16px; transform:translateX({{ bm.offset }}); transition:transform 0.25s ease;">
+                          <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer;" onClick="{{ bm.open }}">
+                            <div style="display:flex; flex-direction:column; gap:6px;">
+                              <div style="display:flex; align-items:center; gap:8px;">
+                                <span style="font-size:17px; font-weight:600; color:#1C1917;">{{ bm.reference }}</span>
+                                <span style="font-size:11px; font-weight:600; color:#B4682D; background:rgba(180,104,45,0.1); padding:3px 8px; border-radius:20px;">{{ bm.translation }}</span>
+                              </div>
+                              <span style="font-size:13px; color:#8C7A6B;">{{ bm.date }} 저장</span>
+                            </div>
+                            <svg width="8" height="14" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" stroke="#8C7A6B" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                          </div>
+                        </div>
+                      </div>
+                    </sc-for>
+                  </sc-if>
+                  <sc-if value="{{ hasNoBookmarks }}">
+                    <div style="padding:60px 20px; text-align:center; color:#8C7A6B; font-size:15px;">아직 저장된 책갈피가 없어요</div>
+                  </sc-if>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- SEARCH SCREEN -->
+            <sc-if value="{{ isReadSearch }}">
+              <div style="height:100%; display:flex; flex-direction:column;">
+                <div style="flex-shrink:0; display:flex; align-items:center; gap:10px; padding:6px 16px 14px; border-bottom:0.5px solid rgba(140,122,107,0.18);">
+                  <div onClick="{{ backToRead }}" style="width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                    <svg width="10" height="17" viewBox="0 0 10 17"><path d="M8.5 1L1 8.5l7.5 7.5" stroke="#B4682D" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                  <span style="font-size:22px; font-weight:700; color:#1C1917;">단어·인물 검색</span>
+                </div>
+
+                <div style="flex-shrink:0; padding:12px 16px; display:flex; flex-direction:column; gap:12px; border-bottom:0.5px solid rgba(140,122,107,0.18);">
+                  <div style="display:flex; align-items:center; gap:8px; background:#FFFFFF; border-radius:10px; padding:10px 14px; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+                    <svg width="15" height="15" viewBox="0 0 17 17"><circle cx="7" cy="7" r="6" fill="none" stroke="#8C7A6B" stroke-width="1.6"/><path d="M11.5 11.5L16 16" stroke="#8C7A6B" stroke-width="1.6" stroke-linecap="round"/></svg>
+                    <input value="{{ searchQuery }}" onChange="{{ onSearchQueryChange }}" placeholder="예: 사랑, 다윗, 믿음" style="border:none; outline:none; flex:1; font-size:16px; font-family:'Lora',Georgia,serif; color:#1C1917; background:transparent;"/>
+                  </div>
+                  <div style="display:flex; background:rgba(140,122,107,0.12); border-radius:10px; padding:3px; gap:2px;">
+                    <sc-for list="{{ searchTranslationSegs }}" as="seg" hint-placeholder-count="3">
+                      <div onClick="{{ seg.select }}" style="flex:1; text-align:center; padding:7px 4px; border-radius:8px; font-size:14px; cursor:pointer; background:{{ seg.bg }}; color:{{ seg.color }}; font-weight:{{ seg.weight }}; box-shadow:{{ seg.shadow }};">{{ seg.label }}</div>
+                    </sc-for>
+                  </div>
+                  <div onClick="{{ runSearch }}" style="background:#B4682D; border-radius:10px; padding:12px; text-align:center; cursor:pointer;">
+                    <span style="color:#FBF6F1; font-size:16px; font-weight:600;">검색</span>
+                  </div>
+                </div>
+
+                <div style="flex:1; overflow-y:auto; padding:14px 16px 20px;">
+                  <sc-if value="{{ hasSearchResults }}">
+                    <sc-for list="{{ searchResultRows }}" as="r" hint-placeholder-count="3">
+                      <div onClick="{{ r.open }}" style="background:#FFFFFF; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.07); padding:16px; margin-bottom:12px; cursor:pointer;">
+                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+                          <span style="font-size:16px; font-weight:600; color:#1C1917;">{{ r.reference }}</span>
+                          <span style="font-size:11px; font-weight:600; color:#B4682D; background:rgba(180,104,45,0.1); padding:3px 8px; border-radius:20px;">{{ r.translation }}</span>
+                        </div>
+                        <div style="height:0.5px; background:rgba(140,122,107,0.2); margin-bottom:10px;"></div>
+                        <span style="font-size:15px; line-height:1.6; color:#4A4038;">{{ r.snippet }}</span>
+                      </div>
+                    </sc-for>
+                  </sc-if>
+                  <sc-if value="{{ showSearchEmpty }}">
+                    <div style="padding:60px 20px; text-align:center; color:#8C7A6B; font-size:15px;">'{{ searchQuery }}'에 대한 결과가 없어요</div>
+                  </sc-if>
+                  <sc-if value="{{ showSearchPrompt }}">
+                    <div style="padding:60px 20px; text-align:center; color:#8C7A6B; font-size:15px;">검색어를 입력하고 검색 버튼을 눌러보세요</div>
+                  </sc-if>
+                </div>
+              </div>
+            </sc-if>
+          </sc-if>
+
+          <!-- OTHER TABS (existing, unchanged — placeholders for context) -->
+          <sc-if value="{{ isHomeTab }}">
+            <div style="height:100%; display:flex; align-items:center; justify-content:center; padding:40px; text-align:center;">
+              <span style="color:#8C7A6B; font-size:14px; line-height:1.6;">Home 탭<br/>(기존 화면, 변경 없음)</span>
+            </div>
+          </sc-if>
+          <sc-if value="{{ isPracticeTab }}">
+            <div style="height:100%; display:flex; align-items:center; justify-content:center; padding:40px; text-align:center;">
+              <span style="color:#8C7A6B; font-size:14px; line-height:1.6;">Practice 탭<br/>(기존 화면, 변경 없음)</span>
+            </div>
+          </sc-if>
+          <sc-if value="{{ isLibraryTab }}">
+            <div style="height:100%; display:flex; align-items:center; justify-content:center; padding:40px; text-align:center;">
+              <span style="color:#8C7A6B; font-size:14px; line-height:1.6;">Library 탭<br/>(기존 화면, 변경 없음)</span>
+            </div>
+          </sc-if>
+        </div>
+
+        <!-- ============ TAB BAR ============ -->
+        <div style="flex-shrink:0; display:flex; padding:8px 8px 22px; background:#FFFFFF; border-top:0.5px solid rgba(140,122,107,0.18);">
+          <div onClick="{{ selectHomeTab }}" style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer;">
+            <svg width="22" height="20" viewBox="0 0 22 20"><path d="M1 9L11 1l10 8" fill="none" stroke="{{ homeColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.5 8v10h15V8" fill="none" stroke="{{ homeColor }}" stroke-width="1.8" stroke-linejoin="round"/></svg>
+            <span style="font-size:10px; font-weight:600; color:{{ homeColor }};">Home</span>
+          </div>
+          <div onClick="{{ selectPracticeTab }}" style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer;">
+            <svg width="20" height="20" viewBox="0 0 20 20"><rect x="1" y="1" width="8" height="8" rx="2" fill="none" stroke="{{ practiceColor }}" stroke-width="1.8"/><rect x="11" y="1" width="8" height="8" rx="2" fill="none" stroke="{{ practiceColor }}" stroke-width="1.8"/><rect x="1" y="11" width="8" height="8" rx="2" fill="none" stroke="{{ practiceColor }}" stroke-width="1.8"/><rect x="11" y="11" width="8" height="8" rx="2" fill="none" stroke="{{ practiceColor }}" stroke-width="1.8"/></svg>
+            <span style="font-size:10px; font-weight:600; color:{{ practiceColor }};">Practice</span>
+          </div>
+          <div onClick="{{ selectLibraryTab }}" style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer;">
+            <svg width="20" height="20" viewBox="0 0 20 20"><path d="M2 2h6a2 2 0 012 2v14a2 2 0 00-2-2H2V2z" fill="none" stroke="{{ libraryColor }}" stroke-width="1.8" stroke-linejoin="round"/><path d="M18 2h-6a2 2 0 00-2 2v14a2 2 0 012-2h6V2z" fill="none" stroke="{{ libraryColor }}" stroke-width="1.8" stroke-linejoin="round"/></svg>
+            <span style="font-size:10px; font-weight:600; color:{{ libraryColor }};">Library</span>
+          </div>
+          <div onClick="{{ selectReadTab }}" style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer;">
+            <svg width="21" height="18" viewBox="0 0 21 18"><path d="M10.5 3C8.5 1.3 5.7 1 1 1v14c4.7 0 7.5 0.3 9.5 2" fill="none" stroke="{{ readColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.5 3c2-1.7 4.8-2 9.5-2v14c-4.7 0-7.5 0.3-9.5 2" fill="none" stroke="{{ readColor }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span style="font-size:10px; font-weight:600; color:{{ readColor }};">Read</span>
+          </div>
+        </div>
+
+        <!-- ============ BOOK / CHAPTER SHEET ============ -->
+        <sc-if value="{{ sheetOpen }}">
+          <div style="position:absolute; inset:0; background:rgba(28,25,23,0.45); z-index:100; display:flex; align-items:flex-end;" onClick="{{ closeSheet }}">
+            <div onClick="{{ stopClick }}" style="width:100%; max-height:82%; background:#F7F2ED; border-radius:20px 20px 0 0; display:flex; flex-direction:column; box-shadow:0 -8px 30px rgba(0,0,0,0.2);" data-screen-label="Book-Chapter Picker">
+              <div style="display:flex; justify-content:center; padding:8px 0 4px;"><div style="width:36px; height:5px; border-radius:3px; background:rgba(140,122,107,0.3);"></div></div>
+
+              <sc-if value="{{ sheetIsBookStep }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 16px 10px;">
+                  <span style="width:32px;"></span>
+                  <span style="font-size:17px; font-weight:700; color:#1C1917;">책 선택</span>
+                  <div onClick="{{ closeSheet }}" style="width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                    <svg width="15" height="15" viewBox="0 0 15 15"><path d="M1 1l13 13M14 1L1 14" stroke="#8C7A6B" stroke-width="1.8" stroke-linecap="round"/></svg>
+                  </div>
+                </div>
+                <div style="padding:0 16px 12px;">
+                  <div style="display:flex; align-items:center; gap:8px; background:#FFFFFF; border-radius:10px; padding:9px 14px;">
+                    <svg width="14" height="14" viewBox="0 0 17 17"><circle cx="7" cy="7" r="6" fill="none" stroke="#8C7A6B" stroke-width="1.6"/><path d="M11.5 11.5L16 16" stroke="#8C7A6B" stroke-width="1.6" stroke-linecap="round"/></svg>
+                    <input value="{{ bookSearchQuery }}" onChange="{{ onBookSearchChange }}" placeholder="책 이름 검색" style="border:none; outline:none; flex:1; font-size:15px; font-family:'Lora',Georgia,serif; color:#1C1917; background:transparent;"/>
+                  </div>
+                </div>
+                <div style="flex:1; overflow-y:auto; padding-bottom:20px;">
+                  <sc-for list="{{ bookSections }}" as="section" hint-placeholder-count="2">
+                    <div>
+                      <div style="font-size:12px; font-weight:600; letter-spacing:0.06em; color:#8C7A6B; padding:10px 20px 6px;">{{ section.name }}</div>
+                      <sc-for list="{{ section.books }}" as="bk" hint-placeholder-count="4">
+                        <div onClick="{{ bk.select }}" style="display:flex; align-items:center; justify-content:space-between; padding:13px 20px; cursor:pointer; border-bottom:0.5px solid rgba(140,122,107,0.14);">
+                          <span style="font-size:16px; color:#1C1917;">{{ bk.name }}</span>
+                          <svg width="7" height="12" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" stroke="#8C7A6B" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ sheetIsChapterStep }}">
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 16px 14px;">
+                  <div onClick="{{ backToBookStep }}" style="width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                    <svg width="9" height="15" viewBox="0 0 10 17"><path d="M8.5 1L1 8.5l7.5 7.5" stroke="#B4682D" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                  <span style="font-size:17px; font-weight:700; color:#1C1917;">{{ pickerBookName }} · 장 선택</span>
+                  <div onClick="{{ closeSheet }}" style="width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                    <svg width="15" height="15" viewBox="0 0 15 15"><path d="M1 1l13 13M14 1L1 14" stroke="#8C7A6B" stroke-width="1.8" stroke-linecap="round"/></svg>
+                  </div>
+                </div>
+                <div style="flex:1; overflow-y:auto; padding:0 16px 24px;">
+                  <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px;">
+                    <sc-for list="{{ chapterCells }}" as="c" hint-placeholder-count="20">
+                      <div onClick="{{ c.select }}" style="aspect-ratio:1; border-radius:10px; display:flex; align-items:center; justify-content:center; cursor:pointer; background:{{ c.bg }}; box-shadow:{{ c.shadow }};">
+                        <span style="font-size:15px; font-weight:600; color:{{ c.color }};">{{ c.num }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- TOAST -->
+        <sc-if value="{{ toastVisible }}">
+          <div style="position:absolute; bottom:100px; left:50%; transform:translateX(-50%); background:#1C1917; color:#F7F2ED; font-size:14px; font-weight:500; padding:10px 18px; border-radius:20px; z-index:200; box-shadow:0 4px 16px rgba(0,0,0,0.25); white-space:nowrap;">{{ toastMessage }}</div>
+        </sc-if>
+      </div>
+    </x-import>
+    <div style="font-size:12px; color:#8C7A6B; text-align:center; max-width:360px; line-height:1.5;">{{ footerHint }}</div>
+  </div>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const BOOKS = [
+  { id: 'gen', name: '창세기', testament: '구약', chapters: 50 },
+  { id: 'ps', name: '시편', testament: '구약', chapters: 150 },
+  { id: 'isa', name: '이사야', testament: '구약', chapters: 66 },
+  { id: 'mt', name: '마태복음', testament: '신약', chapters: 28 },
+  { id: 'mk', name: '마가복음', testament: '신약', chapters: 16 },
+  { id: 'lk', name: '누가복음', testament: '신약', chapters: 24 },
+  { id: 'jn', name: '요한복음', testament: '신약', chapters: 21 },
+  { id: 'rom', name: '로마서', testament: '신약', chapters: 16 },
+];
+
+const TRANSLATIONS = ['개역한글', 'NIV', 'Message'];
+
+const KO_LINES = [
+  '그가 이르시되 너희는 마음에 근심하지 말라',
+  '내가 진실로 너희에게 이르노니 이 말을 마음에 새기라',
+  '보라 내가 너희와 함께 하리니 두려워하지 말라',
+  '이는 오직 믿음으로 말미암아 온전케 되느니라',
+  '그러므로 형제들아 항상 기뻐하고 감사하라',
+  '주께서 이르시되 내 은혜가 네게 족하도다',
+  '그 사랑은 오래 참고 온유하며 시기하지 아니하며',
+  '너희 중에 지혜가 부족한 자가 있거든 구하라',
+  '이러므로 우리가 낙심하지 아니하노니',
+];
+const NIV_LINES = [
+  'Do not let your hearts be troubled; trust in what is true.',
+  'Truly I tell you, keep these words close to your heart.',
+  'Be strong and courageous, for you are not alone.',
+  'It is by faith that we are made whole.',
+  'Rejoice always, and give thanks in all things.',
+  'My grace is enough for you in every season.',
+  'Love is patient, love is kind, it does not envy.',
+  'If any of you lacks wisdom, you should ask for it.',
+  'Therefore we do not lose heart on this journey.',
+];
+const MSG_LINES = [
+  "Don't let your heart get all knotted up. Trust me on this.",
+  'Take these words and tuck them deep inside.',
+  "Buck up. You're not walking this alone.",
+  'Faith is what pulls the whole thing together.',
+  'Celebrate. Say thanks. Every single day.',
+  'What I give you is plenty — more than enough.',
+  "Love doesn't keep score. Love shows up anyway.",
+  'Stuck on something? Just ask. Simple as that.',
+  "So don't quit now — you're closer than you think.",
+];
+
+function linesFor(translation) {
+  if (translation === '개역한글') return KO_LINES;
+  if (translation === 'NIV') return NIV_LINES;
+  return MSG_LINES;
+}
+
+function genVerses(translation, count) {
+  const arr = linesFor(translation);
+  const out = [];
+  for (let i = 0; i < count; i++) out.push({ n: i + 1, text: arr[i % arr.length] });
+  return out;
+}
+
+function findBook(id) {
+  return BOOKS.find(b => b.id === id) || BOOKS[0];
+}
+
+let _bmSeq = 3;
+let _searchSeq = 1;
+
+class Component extends DCLogic {
+  state = {
+    tab: 'read',
+    readScreen: 'main',
+    sheet: null,
+    pickerBookId: null,
+    bookSearchQuery: '',
+    translation: '개역한글',
+    currentBookId: 'jn',
+    currentChapter: 3,
+    bookmarks: [
+      { id: 1, bookId: 'jn', chapter: 3, verse: 16, translation: '개역한글', date: '2026.07.01' },
+      { id: 2, bookId: 'ps', chapter: 23, verse: 1, translation: 'NIV', date: '2026.06.28' },
+      { id: 3, bookId: 'rom', chapter: 8, verse: 28, translation: 'Message', date: '2026.06.20' },
+    ],
+    swipedBookmarkId: null,
+    verseActionId: null,
+    toast: '',
+    searchQuery: '',
+    searchTranslation: '개역한글',
+    searchResults: null,
+    highlight: null,
+  };
+
+  _pressTimer = null;
+  _toastTimer = null;
+  _hlTimer = null;
+
+  selectTab(tab) { this.setState({ tab, readScreen: 'main', sheet: null, swipedBookmarkId: null }); }
+  openBookSheet() { this.setState({ sheet: 'book', bookSearchQuery: '', pickerBookId: null }); }
+  closeSheet() { this.setState({ sheet: null, pickerBookId: null }); }
+  stopClick(e) { e.stopPropagation(); }
+  onBookSearchChange(e) { this.setState({ bookSearchQuery: e.target.value }); }
+  pickBook(book) { this.setState({ pickerBookId: book.id, sheet: 'chapter' }); }
+  backToBookStep() { this.setState({ sheet: 'book', pickerBookId: null }); }
+  pickChapter(num) {
+    this.setState({ currentBookId: this.state.pickerBookId, currentChapter: num, sheet: null, pickerBookId: null, readScreen: 'main', highlight: null });
+  }
+  prevChapter() {
+    const book = findBook(this.state.currentBookId);
+    if (this.state.currentChapter > 1) this.setState({ currentChapter: this.state.currentChapter - 1, verseActionId: null });
+  }
+  nextChapter() {
+    const book = findBook(this.state.currentBookId);
+    if (this.state.currentChapter < book.chapters) this.setState({ currentChapter: this.state.currentChapter + 1, verseActionId: null });
+  }
+  setTranslation(t) { this.setState({ translation: t }); }
+  setSearchTranslation(t) { this.setState({ searchTranslation: t }); }
+  toggleVerseAction(n) { this.setState({ verseActionId: this.state.verseActionId === n ? null : n }); }
+  startPress(n) { clearTimeout(this._pressTimer); this._pressTimer = setTimeout(() => this.setState({ verseActionId: n }), 480); }
+  cancelPress() { clearTimeout(this._pressTimer); }
+
+  showToast(msg) {
+    clearTimeout(this._toastTimer);
+    this.setState({ toast: msg });
+    this._toastTimer = setTimeout(() => this.setState({ toast: '' }), 2000);
+  }
+
+  addVerseBookmark(n) {
+    _bmSeq += 1;
+    const book = findBook(this.state.currentBookId);
+    const bm = { id: _bmSeq, bookId: book.id, chapter: this.state.currentChapter, verse: n, translation: this.state.translation, date: '2026.07.11' };
+    this.setState({ bookmarks: [bm, ...this.state.bookmarks], verseActionId: null });
+    this.showToast('책갈피에 추가되었습니다');
+  }
+  addChapterBookmark() {
+    _bmSeq += 1;
+    const book = findBook(this.state.currentBookId);
+    const bm = { id: _bmSeq, bookId: book.id, chapter: this.state.currentChapter, verse: null, translation: this.state.translation, date: '2026.07.11' };
+    this.setState({ bookmarks: [bm, ...this.state.bookmarks] });
+    this.showToast('이 장이 책갈피에 추가되었습니다');
+  }
+
+  goBookmarksScreen() { this.setState({ readScreen: 'bookmarks', swipedBookmarkId: null }); }
+  goSearchScreen() { this.setState({ readScreen: 'search' }); }
+  backToRead() { this.setState({ readScreen: 'main' }); }
+
+  toggleSwipe(id) { this.setState({ swipedBookmarkId: this.state.swipedBookmarkId === id ? null : id }); }
+  removeBookmark(id) { this.setState({ bookmarks: this.state.bookmarks.filter(b => b.id !== id), swipedBookmarkId: null }); }
+
+  jumpTo(bookId, chapter, verse, translation) {
+    clearTimeout(this._hlTimer);
+    this.setState({
+      currentBookId: bookId, currentChapter: chapter, translation,
+      tab: 'read', readScreen: 'main', sheet: null,
+      highlight: verse != null ? { bookId, chapter, verse } : null,
+    });
+    this._hlTimer = setTimeout(() => this.setState({ highlight: null }), 2500);
+  }
+  openBookmark(bm) { this.jumpTo(bm.bookId, bm.chapter, bm.verse, bm.translation); }
+
+  onSearchQueryChange(e) { this.setState({ searchQuery: e.target.value }); }
+  runSearch() {
+    const q = this.state.searchQuery.trim();
+    if (!q) { this.setState({ searchResults: [] }); return; }
+    const picks = [
+      { bookId: 'ps', chapter: 23, verse: 1 },
+      { bookId: 'jn', chapter: 3, verse: 16 },
+      { bookId: 'rom', chapter: 8, verse: 28 },
+      { bookId: 'gen', chapter: 1, verse: 1 },
+    ];
+    const results = picks.map(p => {
+      _searchSeq += 1;
+      return {
+        id: _searchSeq,
+        bookId: p.bookId, chapter: p.chapter, verse: p.verse,
+        translation: this.state.searchTranslation,
+        snippet: `"${q}"에 대한 예시 구절이 여기 표시됩니다.`,
+      };
+    });
+    this.setState({ searchResults: results });
+  }
+
+  renderVals() {
+    const s = this.state;
+    const activeColor = '#B4682D', inactiveColor = '#8C7A6B';
+    const book = findBook(s.currentBookId);
+    const verses = genVerses(s.translation, 9);
+
+    const segFor = (current, setter) => TRANSLATIONS.map(t => {
+      const active = t === current;
+      return {
+        label: t,
+        select: () => setter(t),
+        bg: active ? '#FFFFFF' : 'transparent',
+        color: active ? '#B4682D' : '#8C7A6B',
+        weight: active ? 600 : 500,
+        shadow: active ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
+      };
+    });
+
+    const verseRows = verses.map(v => {
+      const isHl = s.highlight && s.highlight.bookId === s.currentBookId && s.highlight.chapter === s.currentChapter && s.highlight.verse === v.n;
+      return {
+        n: v.n, text: v.text,
+        bg: isHl ? 'rgba(180,104,45,0.14)' : 'transparent',
+        showAction: s.verseActionId === v.n,
+        toggle: () => this.toggleVerseAction(v.n),
+        addBookmark: () => this.addVerseBookmark(v.n),
+        onMouseDown: () => this.startPress(v.n),
+        onMouseUp: () => this.cancelPress(),
+      };
+    });
+
+    const query = s.bookSearchQuery.trim();
+    const filteredBooks = query ? BOOKS.filter(b => b.name.includes(query)) : BOOKS;
+    const bookSections = ['구약', '신약'].map(t => ({
+      name: t,
+      books: filteredBooks.filter(b => b.testament === t).map(b => ({ id: b.id, name: b.name, select: () => this.pickBook(b) })),
+    })).filter(sec => sec.books.length > 0);
+
+    const pickerBook = s.pickerBookId ? findBook(s.pickerBookId) : null;
+    const chapterCells = pickerBook ? Array.from({ length: pickerBook.chapters }, (_, i) => {
+      const num = i + 1;
+      const active = pickerBook.id === s.currentBookId && num === s.currentChapter;
+      return {
+        num,
+        select: () => this.pickChapter(num),
+        bg: active ? '#B4682D' : '#FFFFFF',
+        color: active ? '#FBF6F1' : '#1C1917',
+        shadow: active ? '0 2px 6px rgba(180,104,45,0.3)' : '0 1px 4px rgba(0,0,0,0.05)',
+      };
+    }) : [];
+
+    const bookmarkRows = s.bookmarks.map(bm => {
+      const b = findBook(bm.bookId);
+      return {
+        id: bm.id,
+        reference: bm.verse != null ? `${b.name} ${bm.chapter}:${bm.verse}` : `${b.name} ${bm.chapter}장`,
+        translation: bm.translation,
+        date: bm.date,
+        offset: s.swipedBookmarkId === bm.id ? '-72px' : '0px',
+        toggleSwipe: () => this.toggleSwipe(bm.id),
+        open: () => this.openBookmark(bm),
+        remove: () => this.removeBookmark(bm.id),
+      };
+    });
+
+    const searchResultRows = (s.searchResults || []).map(r => {
+      const b = findBook(r.bookId);
+      return {
+        id: r.id,
+        reference: `${b.name} ${r.chapter}:${r.verse}`,
+        translation: r.translation,
+        snippet: r.snippet,
+        open: () => this.jumpTo(r.bookId, r.chapter, r.verse, r.translation),
+      };
+    });
+
+    return {
+      deviceLabel: 'Read / Bookmarks / Search',
+      isReadTab: s.tab === 'read', isHomeTab: s.tab === 'home', isPracticeTab: s.tab === 'practice', isLibraryTab: s.tab === 'library',
+      isReadMain: s.readScreen === 'main', isReadBookmarks: s.readScreen === 'bookmarks', isReadSearch: s.readScreen === 'search',
+      selectHomeTab: () => this.selectTab('home'),
+      selectPracticeTab: () => this.selectTab('practice'),
+      selectLibraryTab: () => this.selectTab('library'),
+      selectReadTab: () => this.selectTab('read'),
+      homeColor: s.tab === 'home' ? activeColor : inactiveColor,
+      practiceColor: s.tab === 'practice' ? activeColor : inactiveColor,
+      libraryColor: s.tab === 'library' ? activeColor : inactiveColor,
+      readColor: s.tab === 'read' ? activeColor : inactiveColor,
+
+      currentRef: `${book.name} ${s.currentChapter}장`,
+      currentBookName: book.name,
+      currentChapter: s.currentChapter,
+      currentBookTotalChapters: book.chapters,
+      prevOpacity: s.currentChapter <= 1 ? 0.3 : 1,
+      nextOpacity: s.currentChapter >= book.chapters ? 0.3 : 1,
+      openBookSheet: () => this.openBookSheet(),
+      goBookmarksScreen: () => this.goBookmarksScreen(),
+      goSearchScreen: () => this.goSearchScreen(),
+      backToRead: () => this.backToRead(),
+      prevChapter: () => this.prevChapter(),
+      nextChapter: () => this.nextChapter(),
+      addChapterBookmark: () => this.addChapterBookmark(),
+      translationSegs: segFor(s.translation, (t) => this.setTranslation(t)),
+      verseRows,
+
+      hasBookmarks: s.bookmarks.length > 0,
+      hasNoBookmarks: s.bookmarks.length === 0,
+      bookmarkRows,
+
+      searchQuery: s.searchQuery,
+      onSearchQueryChange: (e) => this.onSearchQueryChange(e),
+      searchTranslationSegs: segFor(s.searchTranslation, (t) => this.setSearchTranslation(t)),
+      runSearch: () => this.runSearch(),
+      hasSearchResults: !!(s.searchResults && s.searchResults.length > 0),
+      showSearchEmpty: !!(s.searchResults && s.searchResults.length === 0),
+      showSearchPrompt: s.searchResults === null,
+      searchResultRows,
+
+      sheetOpen: !!s.sheet,
+      sheetIsBookStep: s.sheet === 'book',
+      sheetIsChapterStep: s.sheet === 'chapter',
+      closeSheet: () => this.closeSheet(),
+      stopClick: (e) => this.stopClick(e),
+      bookSearchQuery: s.bookSearchQuery,
+      onBookSearchChange: (e) => this.onBookSearchChange(e),
+      bookSections,
+      backToBookStep: () => this.backToBookStep(),
+      pickerBookName: pickerBook ? pickerBook.name : '',
+      chapterCells,
+
+      toastVisible: !!s.toast,
+      toastMessage: s.toast,
+
+      footerHint: '실제 구현: 절 텍스트 길게 누르기 → 책갈피 추가 액션 표시 · 북마크 행 탭 → 스와이프 삭제 버튼 표시',
+    };
+  }
+}
+
+</script>
+</body>
+</html>
