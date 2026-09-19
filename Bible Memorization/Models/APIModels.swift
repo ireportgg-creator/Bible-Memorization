@@ -1,10 +1,10 @@
 import Foundation
 
-struct BibleAPIResponse<T: Decodable>: Decodable {
+nonisolated struct BibleAPIResponse<T: Decodable>: Decodable {
     let data: T
 }
 
-struct VerseData: Decodable {
+nonisolated struct VerseData: Decodable {
     let id: String
     let reference: String
     let content: String
@@ -48,7 +48,7 @@ struct ChapterContent {
     let verses: [VerseLine]
 }
 
-struct APIChapterData: Decodable {
+nonisolated struct APIChapterData: Decodable {
     let id: String
     let bibleId: String
     let number: String
@@ -68,7 +68,7 @@ struct SearchResultItem: Identifiable {
     let text: String
 }
 
-struct APISearchData: Decodable {
+nonisolated struct APISearchData: Decodable {
     let query: String
     let total: Int?
     let verses: [APISearchVerse]?

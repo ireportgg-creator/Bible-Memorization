@@ -27,7 +27,7 @@ Run/debug via Xcode (Cmd+R) using the simulator — that's the normal workflow h
 - `NIV` / `Message` → `BibleAPIService`, calls `api.scripture.api.bible` using the key in `APIConfig.swift`, which reads `APIKeys.bibleAPIKey`. `Bible Memorization/APIKeys.swift` is gitignored and **not present after a fresh clone** — create it locally with:
   ```swift
   import Foundation
-  enum APIKeys {
+  nonisolated enum APIKeys {
       static let bibleAPIKey = "YOUR_KEY_HERE"
   }
   ```

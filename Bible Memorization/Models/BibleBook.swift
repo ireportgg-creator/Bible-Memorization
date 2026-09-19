@@ -6,7 +6,7 @@ struct BibleBook: Identifiable, Hashable {
     let english: String
 }
 
-extension BibleBook {
+nonisolated extension BibleBook {
     static let all: [BibleBook] = [
         // 구약
         BibleBook(id: "GEN", korean: "창세기",       english: "Genesis"),
